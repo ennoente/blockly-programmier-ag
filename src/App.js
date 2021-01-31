@@ -73,7 +73,7 @@ const App = () => {
     'gelb': '#FFFF00',
     'olive': '#808000',
     'hellgrün': '#00FF00',
-    'dunkelgrün': '#008000',
+    'grün': '#008000',
     'aqua': '#00FFFF',
     'türkis': '#008080',
     'blau': '#0000FF',
