@@ -1,29 +1,70 @@
-.App-logo {
-  animation: App-logo-spin infinite 20s linear;
-  height: 40vmin;
-  pointer-events: none;
+html, body, .container { height: 100%; margin: 0; }
+
+.container {
+    display: grid;
+    grid-gap: 0.5rem;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(12, 1fr);
+    grid-template-areas:
+            "h h h h h h h l l l"
+            "h h h h h h h l l l"
+            "d d d d d d d l l l"
+            "d d d d d d d l l l"
+            "d d d d d d d l l l"
+            "d d d d d d d l l l"
+            "d d d d d d d l l l"
+            "d d d d d d d c c c"
+            "d d d d d d d c c c"
+            "d d d d d d d c c c"
+            "d d d d d d d c c c"
+            "d d d d d d d c c c"
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 50vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.header {
+    border: 2px solid gray;
+    grid-area: h
 }
 
-.App-link {
-  color: #61dafb;
+.desk {
+    border: 2px solid gray;
+    grid-area: d
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.lamp {
+    border: 2px solid gray;
+    grid-area: l;
+}
+
+.console {
+    border: 2px solid gray;
+    grid-area: c;
+    overflow: auto;
+}
+
+.led {
+
+    width: 369px;
+    height: 294px;
+
+    transform: scale(0.2);
+
+    margin-left: -12.5%;
+}
+
+.led_circle {
+    width: 50%;
+    height: 15vw;
+
+    margin: auto;
+
+    border-radius: 50%;
+
+    background-color: blue;
+}
+
+
+/* For presentation only, no need to copy the code below */
+.grid-container * {
+    border: 1px solid red;
+    position: relative;
 }
