@@ -21,12 +21,8 @@
  * @author samelh@google.com (Sam El-Husseini)
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import './App.css';
-
-import logo from './logo.svg';
-
-import BlocklyComponent, { Block, Category, Field, Shadow, Value } from './Blockly';
 
 import BlocklyJS from 'blockly/javascript';
 import Blockly from 'blockly';
@@ -45,36 +41,164 @@ import Console from './console';
 import Lamp from './lamp';
 
 const App = () => {
-  const [consoleLogs, setConsoleLogs] = useState([]);
-  const [lampState, setLampState] = useState('#FFFFFF');
-  const [loadInput, setLoadInput] = useState(null);
-  const simpleWorkspace = useRef(null);
-  const fileInputRef = useRef(null);
+    const [consoleLogs, setConsoleLogs] = useState([]);
+    const [lampState, setLampState] = useState('#FFFFFF');
+    const [loadInput, setLoadInput] = useState(null);
+    const simpleWorkspace = useRef(null);
+    const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    Blockly.setLocale(locale);
-  }, []);
+    useEffect(() => {
+        Blockly.setLocale(locale);
+    }, []);
 
-  useEffect(() => {
-    if (!loadInput) return;
+    // Load read file to workspace
+    useEffect(() => {
+        if (!loadInput) return;
 
-    simpleWorkspace.current.workspace.clear();
+        simpleWorkspace.current.workspace.clear();
 
-    let xml = Blockly.Xml.textToDom(loadInput);
-    Blockly.Xml.domToWorkspace(xml, simpleWorkspace.current.workspace);
-  }, [loadInput]);
+        try {
+            let xml = Blockly.Xml.textToDom(loadInput);
+            Blockly.Xml.domToWorkspace(xml, simpleWorkspace.current.workspace);
+        } catch (e) {
+            console.log("Invalid file. Workspace could not be created from input");
+        }
+    }, [loadInput]);
 
-  const generateCode = () => {
-    return BlocklyJS.workspaceToCode(
-      simpleWorkspace.current.workspace
+    const generateCode = () => {
+        return BlocklyJS.workspaceToCode(
+            simpleWorkspace.current.workspace
+        );
+    };
+
+    const clearConsole = () => {
+        setConsoleLogs([]);
+    };
+
+    const runCode = async () => {
+        const code = generateCode();
+
+        // Used for running the code
+        // eslint-disable-next-line no-unused-vars
+        const consolelog = async str => {
+            await setConsoleLogs(oldLogs => [...oldLogs, `${str}`]);
+        };
+
+        // eslint-disable-next-line no-unused-vars
+        const setLedConfig = (configStr) => {
+            configStr = configStr.toLowerCase();
+            const mappedHexColor = ledColorMap[configStr] || '#000000';
+
+            setLampState(mappedHexColor);
+        };
+
+        // eslint-disable-next-line no-unused-vars
+        const fetchWeather = async (city) => {
+            const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=69b7ac75dabe7d12757abc25e2562913`, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            const json = await response.json();
+            const weatherId = json.weather[0].id;
+
+            return weatherMap[weatherId] || 'bewölkt';
+        };
+
+        // eslint-disable-next-line no-eval
+        eval("(async () => {" + code + "})()")
+    };
+
+    //let bla = '<xml xmlns="https://developers.google.com/blockly/xml"><block type="controls_ifelse" id="g=f|l9un?gjLUBH6czs1" x="712" y="102"><statement name="DO0"><block type="test_react_date_field" id="~|~|5jG?[i6)9TO*P6Rm"><field name="DATE">Wed Jan 01 2020 00:00:00 GMT+0100 (Mitteleuropäische Normalzeit)</field></block></statement></block></xml>';
+    let bla = '<xml xmlns="https://developers.google.com/blockly/xml"><variables><variable id="Tw5gy~c^q$;*4UDZyU%_">wetter</variable></variables><block type="variables_set" id="@`vEa^),xqO|}`[uJFXg" x="76" y="75"><field name="VAR" id="Tw5gy~c^q$;*4UDZyU%_">wetter</field><value name="VALUE"><block type="weather_get" id="i)R5q`4wWg#Q9IXFO-ng"><field name="CITY">Varel</field></block></value><next><block type="text_print_variable_to_console" id="RJi)},WO+*]aUk,L.Zr~"><value name="VAR"><block type="text_contains" id="Cs]*qtB0)E|K^bfg()Qq"><field name="CHECK_INPUT">sonnig</field><value name="VAR"><block type="variables_get" id="9h{!*Pq6N*BKe@?iKM_V"><field name="VAR" id="Tw5gy~c^q$;*4UDZyU%_">wetter</field></block></value></block></value></block></next></block></xml>';
+
+    const loadCode = (event) => {
+        const file = event.target.files[0];
+
+        if (!file) return;
+        if (getFileNameExtension(file) !== 'bly') return;
+
+        console.log("file", file);
+        console.log("file.size", file.size);
+        console.log("file.name", file.name);
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            setLoadInput(event.target.result);
+        };
+        reader.readAsText(file);
+    };
+
+    const saveCode = () => {
+        console.log("workspace", Blockly.Xml.workspaceToDom(simpleWorkspace.current.workspace));
+        let dom = Blockly.Xml.workspaceToDom(simpleWorkspace.current.workspace);
+        bla = Blockly.Xml.domToText(dom);
+        console.log("bla", bla);
+
+        if (domIsEmpty(bla)) return;
+
+        const element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(bla));
+        element.setAttribute('download', 'code.bly');
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+
+        document.body.removeChild(element);
+    };
+
+
+    return (
+        <div className="container">
+            <div className="header">
+                <div>
+                    <button onClick={generateCode}>Kompilieren</button>
+                </div>
+                <div>
+                    <button onClick={saveCode}>Speichern</button>
+                </div>
+                <div>
+                    <button
+                        className="h-16 w-56 text-4xl border-2 rounded-lg border-indigo-900 text-gray-700 hover:border-gray-500 active:transform active:scale-75 focus:outline-none"
+                        onClick={() => fileInputRef.current.click()}
+                    >
+                        Laden
+                    </button>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={loadCode}
+                        hidden
+                    />
+                </div>
+                <div>
+                    <button onClick={runCode}>Ausprobieren</button>
+                </div>
+            </div>
+
+            <Desk ref={simpleWorkspace}/>
+
+            <Lamp lampState={lampState}/>
+
+            <Console consoleLogs={consoleLogs} clearConsole={clearConsole}/>
+        </div>
     );
-  };
+};
 
-  const clearConsole = () => {
-    setConsoleLogs([]);
-  };
+const domIsEmpty = domText => {
+    return domText === '<xml xmlns="https://developers.google.com/blockly/xml"></xml>';
+};
 
-  const ledColorMap = {
+const getFileNameExtension = file => {
+    if (!file) return;
+
+    return file.name.split('.').pop();
+}
+
+const ledColorMap = {
     'rot': '#FF0000',
     'schwarz': '#000000',
     'gelb': '#FFFF00',
@@ -85,9 +209,9 @@ const App = () => {
     'türkis': '#008080',
     'blau': '#0000FF',
     'dunkelblau': '#000080',
-  };
+};
 
-  const weatherMap = {
+const weatherMap = {
     200: 'Gewitter',
     201: 'Gewitter',
     202: 'Gewitter',
@@ -139,105 +263,6 @@ const App = () => {
     802: 'Leicht bewölkt',
     803: 'Bewölkt',
     804: 'Bewölkt'
-  }
-
-  const runCode = async () => {
-    const code = generateCode();
-
-    // Used for running the code
-    // eslint-disable-next-line no-unused-vars
-    const consolelog = async str => {
-      await setConsoleLogs(oldLogs => [...oldLogs, `${ str }`]);
-    };
-
-    // eslint-disable-next-line no-unused-vars
-    const setLedConfig = (configStr) => {
-      configStr = configStr.toLowerCase();
-      const mappedHexColor = ledColorMap[configStr] || '#000000';
-
-      setLampState(mappedHexColor);
-    };
-
-    // eslint-disable-next-line no-unused-vars
-    const fetchWeather = async (city) => {
-      const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${ city }&appid=69b7ac75dabe7d12757abc25e2562913`, {
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-
-      const json = await response.json();
-      const weatherId = json.weather[0].id;
-
-      return weatherMap[weatherId] || 'bewölkt';
-    };
-
-    // eslint-disable-next-line no-eval
-    eval("(async () => {" + code + "})()")
-  };
-
-  //let bla = '<xml xmlns="https://developers.google.com/blockly/xml"><block type="controls_ifelse" id="g=f|l9un?gjLUBH6czs1" x="712" y="102"><statement name="DO0"><block type="test_react_date_field" id="~|~|5jG?[i6)9TO*P6Rm"><field name="DATE">Wed Jan 01 2020 00:00:00 GMT+0100 (Mitteleuropäische Normalzeit)</field></block></statement></block></xml>';
-  let bla = '<xml xmlns="https://developers.google.com/blockly/xml"><variables><variable id="Tw5gy~c^q$;*4UDZyU%_">wetter</variable></variables><block type="variables_set" id="@`vEa^),xqO|}`[uJFXg" x="76" y="75"><field name="VAR" id="Tw5gy~c^q$;*4UDZyU%_">wetter</field><value name="VALUE"><block type="weather_get" id="i)R5q`4wWg#Q9IXFO-ng"><field name="CITY">Varel</field></block></value><next><block type="text_print_variable_to_console" id="RJi)},WO+*]aUk,L.Zr~"><value name="VAR"><block type="text_contains" id="Cs]*qtB0)E|K^bfg()Qq"><field name="CHECK_INPUT">sonnig</field><value name="VAR"><block type="variables_get" id="9h{!*Pq6N*BKe@?iKM_V"><field name="VAR" id="Tw5gy~c^q$;*4UDZyU%_">wetter</field></block></value></block></value></block></next></block></xml>';
-
-  const loadCode = (event) => {
-    const file = event.target.files[0];
-
-    console.log("file", file);
-    console.log("file.size", file.size);
-
-    const reader = new FileReader();
-    reader.onload = function (event) {
-      setLoadInput(event.target.result);
-    };
-    reader.readAsText(file);
-  };
-
-  const saveCode = () => {
-    console.log("workspace", Blockly.Xml.workspaceToDom(simpleWorkspace.current.workspace));
-    let dom = Blockly.Xml.workspaceToDom(simpleWorkspace.current.workspace);
-    bla = Blockly.Xml.domToText(dom);
-    console.log("bla", bla);
-
-    const element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(bla));
-    element.setAttribute('download', 'code.dat');
-
-    element.style.display = 'none';
-    document.body.appendChild(element);
-
-    element.click();
-
-    document.body.removeChild(element);
-  };
-
-
-  return (
-    <div className="container">
-      <div className="header">
-        <button onClick={ generateCode }>Kompilieren</button>
-        <button hidden={!!} onClick={ saveCode }>Speichern</button>
-        <button
-          className="h-16 w-56 text-4xl border-2 rounded-lg border-indigo-900 text-gray-700 hover:border-gray-500 active:transform active:scale-75 focus:outline-none"
-          onClick={ () => fileInputRef.current.click() }
-        >
-          Hochladen
-        </button>
-        <input
-          type="file"
-          ref={ fileInputRef }
-          onChange={ loadCode }
-          hidden
-        />
-        <button onClick={ runCode }>Ausprobieren</button>
-      </div>
-
-      <Desk ref={ simpleWorkspace }/>
-
-      <Lamp lampState={ lampState }/>
-
-      <Console consoleLogs={ consoleLogs } clearConsole={ clearConsole }/>
-    </div>
-  );
-};
+}
 
 export default App;

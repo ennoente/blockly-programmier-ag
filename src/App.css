@@ -1,4 +1,7 @@
-html, body, .container { height: 100%; margin: 0; }
+html, body, .container {
+    height: 100%;
+    margin: 0;
+}
 
 .container {
     display: grid;
@@ -22,7 +25,33 @@ html, body, .container { height: 100%; margin: 0; }
 
 .header {
     border: 2px solid gray;
-    grid-area: h
+    grid-area: h;
+
+    display: grid;
+    grid-gap: 0.5rem;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(1, 1fr);
+    grid-template-areas:
+            "e z d v"
+}
+
+button {
+    color: #fff !important;
+    text-transform: uppercase;
+    text-decoration: none;
+    background: #60a3bc;
+    display: inline-block;
+    border: none;
+    padding: 20px;
+    border-radius: 50px;
+    transition: all 0.4s ease 0s;
+}
+
+button:hover {
+    text-shadow: 0px 0px 6px rgba(255, 255, 255, 1);
+    -webkit-box-shadow: 0px 5px 40px -10px rgba(0,0,0,0.57);
+    -moz-box-shadow: 0px 5px 40px -10px rgba(0,0,0,0.57);
+    transition: all 0.4s ease 0s;
 }
 
 .desk {
@@ -55,8 +84,9 @@ html, body, .container { height: 100%; margin: 0; }
     width: 50%;
     height: 15vw;
 
-    margin: auto;
+    margin: calc((58.3vh - 15vw) / 2) auto auto;
 
+    border: 1px solid black;
     border-radius: 50%;
 
     background-color: blue;
