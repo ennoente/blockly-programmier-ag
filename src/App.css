@@ -30,9 +30,7 @@ html, body, .container {
     display: grid;
     grid-gap: 0.5rem;
     grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(1, 1fr);
-    grid-template-areas:
-            "e z d v"
+    grid-template-rows: repeat(3, 1fr);
 }
 
 button {

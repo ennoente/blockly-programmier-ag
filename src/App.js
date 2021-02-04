@@ -43,6 +43,7 @@ import Lamp from './lamp';
 const App = () => {
     const [consoleLogs, setConsoleLogs] = useState([]);
     const [lampState, setLampState] = useState('#FFFFFF');
+    const [lampStateHumanReadable, setLampStateHumanReadable] = useState('nicht');
     const [loadInput, setLoadInput] = useState(null);
     const simpleWorkspace = useRef(null);
     const fileInputRef = useRef(null);
@@ -87,14 +88,20 @@ const App = () => {
         // eslint-disable-next-line no-unused-vars
         const setLedConfig = (configStr) => {
             configStr = configStr.toLowerCase();
-            const mappedHexColor = ledColorMap[configStr] || '#000000';
+            let mappedHexColor = ledColorMap[configStr];
+
+            if (!mappedHexColor) {
+                mappedHexColor = '#FFFFFF';
+                configStr = 'nicht';
+            }
 
             setLampState(mappedHexColor);
+            setLampStateHumanReadable(configStr);
         };
 
         // eslint-disable-next-line no-unused-vars
         const fetchWeather = async (city) => {
-            const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=69b7ac75dabe7d12757abc25e2562913`, {
+            const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${process.env.REACT_APP_API_KEY}`, {
                 headers: {
                     'Accept': 'application/json'
                 }
@@ -154,6 +161,11 @@ const App = () => {
     return (
         <div className="container">
             <div className="header">
+                {/* Needed for accurate grid */}
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
                 <div>
                     <button onClick={generateCode}>Kompilieren</button>
                 </div>
@@ -181,7 +193,7 @@ const App = () => {
 
             <Desk ref={simpleWorkspace}/>
 
-            <Lamp lampState={lampState}/>
+            <Lamp lampState={lampState} lampStateHumanReadable={lampStateHumanReadable}/>
 
             <Console consoleLogs={consoleLogs} clearConsole={clearConsole}/>
         </div>
