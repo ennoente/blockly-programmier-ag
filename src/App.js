@@ -46,16 +46,23 @@ import Lamp from './lamp';
 
 const App = () => {
   const [consoleLogs, setConsoleLogs] = useState([]);
-  //const [lampState, setLampState] = useState(['Die LED ist aus', '#FFFFFF']);
   const [lampState, setLampState] = useState('#FFFFFF');
+  const [loadInput, setLoadInput] = useState(null);
   const simpleWorkspace = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
-    console.log(Blockly.Blocks);
     Blockly.setLocale(locale);
-
-    console.log(String(Blockly.JavaScript['variables_set']));
   }, []);
+
+  useEffect(() => {
+    if (!loadInput) return;
+
+    simpleWorkspace.current.workspace.clear();
+
+    let xml = Blockly.Xml.textToDom(loadInput);
+    Blockly.Xml.domToWorkspace(xml, simpleWorkspace.current.workspace);
+  }, [loadInput]);
 
   const generateCode = () => {
     return BlocklyJS.workspaceToCode(
@@ -138,43 +145,32 @@ const App = () => {
     const code = generateCode();
 
     // Used for running the code
+    // eslint-disable-next-line no-unused-vars
     const consolelog = async str => {
-      console.log(str);
-      await setConsoleLogs(oldLogs => [...oldLogs, `${str}`]);
+      await setConsoleLogs(oldLogs => [...oldLogs, `${ str }`]);
     };
 
+    // eslint-disable-next-line no-unused-vars
     const setLedConfig = (configStr) => {
       configStr = configStr.toLowerCase();
       const mappedHexColor = ledColorMap[configStr] || '#000000';
 
-      //if (false)
-
-      //setLampState([, mappedHexColor]);
       setLampState(mappedHexColor);
     };
 
+    // eslint-disable-next-line no-unused-vars
     const fetchWeather = async (city) => {
-      const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=69b7ac75dabe7d12757abc25e2562913`, {
+      const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${ city }&appid=69b7ac75dabe7d12757abc25e2562913`, {
         headers: {
           'Accept': 'application/json'
         }
       });
 
-      console.log("raw response", response);
-
       const json = await response.json();
-
-      console.log("after json", json);
-
       const weatherId = json.weather[0].id;
 
       return weatherMap[weatherId] || 'bewölkt';
     };
-
-
-
-    console.log("code", code);
-    console.log("evaluating code...");
 
     // eslint-disable-next-line no-eval
     eval("(async () => {" + code + "})()")
@@ -183,34 +179,63 @@ const App = () => {
   //let bla = '<xml xmlns="https://developers.google.com/blockly/xml"><block type="controls_ifelse" id="g=f|l9un?gjLUBH6czs1" x="712" y="102"><statement name="DO0"><block type="test_react_date_field" id="~|~|5jG?[i6)9TO*P6Rm"><field name="DATE">Wed Jan 01 2020 00:00:00 GMT+0100 (Mitteleuropäische Normalzeit)</field></block></statement></block></xml>';
   let bla = '<xml xmlns="https://developers.google.com/blockly/xml"><variables><variable id="Tw5gy~c^q$;*4UDZyU%_">wetter</variable></variables><block type="variables_set" id="@`vEa^),xqO|}`[uJFXg" x="76" y="75"><field name="VAR" id="Tw5gy~c^q$;*4UDZyU%_">wetter</field><value name="VALUE"><block type="weather_get" id="i)R5q`4wWg#Q9IXFO-ng"><field name="CITY">Varel</field></block></value><next><block type="text_print_variable_to_console" id="RJi)},WO+*]aUk,L.Zr~"><value name="VAR"><block type="text_contains" id="Cs]*qtB0)E|K^bfg()Qq"><field name="CHECK_INPUT">sonnig</field><value name="VAR"><block type="variables_get" id="9h{!*Pq6N*BKe@?iKM_V"><field name="VAR" id="Tw5gy~c^q$;*4UDZyU%_">wetter</field></block></value></block></value></block></next></block></xml>';
 
-  const loadCode = () => {
-    simpleWorkspace.current.workspace.clear();
-    let xml = Blockly.Xml.textToDom(bla);
-    Blockly.Xml.domToWorkspace(xml, simpleWorkspace.current.workspace);
-  }
+  const loadCode = (event) => {
+    const file = event.target.files[0];
+
+    console.log("file", file);
+    console.log("file.size", file.size);
+
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      setLoadInput(event.target.result);
+    };
+    reader.readAsText(file);
+  };
 
   const saveCode = () => {
     console.log("workspace", Blockly.Xml.workspaceToDom(simpleWorkspace.current.workspace));
     let dom = Blockly.Xml.workspaceToDom(simpleWorkspace.current.workspace);
     bla = Blockly.Xml.domToText(dom);
     console.log("bla", bla);
-  }
+
+    const element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(bla));
+    element.setAttribute('download', 'code.dat');
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
+  };
 
 
   return (
     <div className="container">
       <div className="header">
-        <button onClick={ generateCode }>Herunterladen</button>
-        <button onClick={ saveCode }>Save</button>
-        <button onClick={ loadCode }>Load</button>
+        <button onClick={ generateCode }>Kompilieren</button>
+        <button hidden={!!} onClick={ saveCode }>Speichern</button>
+        <button
+          className="h-16 w-56 text-4xl border-2 rounded-lg border-indigo-900 text-gray-700 hover:border-gray-500 active:transform active:scale-75 focus:outline-none"
+          onClick={ () => fileInputRef.current.click() }
+        >
+          Hochladen
+        </button>
+        <input
+          type="file"
+          ref={ fileInputRef }
+          onChange={ loadCode }
+          hidden
+        />
         <button onClick={ runCode }>Ausprobieren</button>
       </div>
 
       <Desk ref={ simpleWorkspace }/>
 
-      <Lamp lampState={lampState}/>
+      <Lamp lampState={ lampState }/>
 
-      <Console consoleLogs={consoleLogs} clearConsole={clearConsole}/>
+      <Console consoleLogs={ consoleLogs } clearConsole={ clearConsole }/>
     </div>
   );
 };

@@ -12,7 +12,6 @@ export default React.forwardRef((props, ref) => (
                         } }
                         initialXml={ `
             <xml xmlns="http://www.w3.org/1999/xhtml">
-            <block type="controls_ifelse" x="0" y="0"/>
             </xml>
           ` }>
         <Category name="Steuerung" colour="#FFAB19">
